@@ -8,7 +8,8 @@ To start contributing, create your own copy of this repository:
 
     2. Click Fork — GitHub will create a copy of this repo under your account.
 
-That fork is where you will make your changes and push your work.
+ That fork is where you will make your changes and push your work.
+ 
 ---
 
 ## 💻 2. Clone Your Fork  
