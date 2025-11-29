@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>SamhitaFusion | Home</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore-compat.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <link rel="stylesheet" href="assets/css/styles.css" />
+</head>
+
+<body class="bg-slate-950 text-slate-100">
+    <header class="sf-nav border-b border-slate-800">
+        <nav class="max-w-6xl mx-auto flex items-center justify-between px-4 py-3">
+            <div class="flex items-center gap-2">
+                <img src="assets/img/logo.svg" class="h-8 w-8" />
+                <span class="font-semibold text-lg">SamhitaFusion</span>
+            </div>
+            <div class="flex items-center gap-4 text-sm">
+                <a href="#v" class="sf-hide-m hover:text-sky-300">Vision</a>
+                <a href="#f" class="sf-hide-m hover:text-sky-300">Features</a>
+                <a href="#c" class="sf-hide-m hover:text-sky-300">Contact</a>
+                <button id="btn-lg" class="sf-btn bg-sky-600 hover:bg-sky-500">
+                    Login
+                </button>
+                <button id="btn-sg" class="sf-btn border border-sky-400 hover:bg-sky-900/40">
+                    Register
+                </button>
+            </div>
+        </nav>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 py-10">
+        <section class="grid md:grid-cols-2 gap-10 items-center">
+            <div>
+                <div class="sf-pill bg-sky-900/70 text-sky-200 mb-3">
+                    Allopathy • Ayurveda • Homeopathy
+                </div>
+                <h1 class="text-3xl md:text-5xl font-bold mb-4">
+                    One space for
+                    <span class="text-sky-400">integrated care</span>
+                </h1>
+                <p class="text-sm md:text-base text-slate-300/80 mb-6">
+                    Multi-portal platform for patients, doctors, researchers, and
+                    hospitals. Unified records, telemedicine, AI guidance, and visual
+                    health journeys, built on free tools for hackathons.
+                </p>
+                <div class="flex flex-wrap gap-3 mb-6">
+                    <button id="btn-cta" class="sf-btn bg-sky-600 hover:bg-sky-500 text-slate-50">
+                        Get started
+                    </button>
+                    <button class="sf-btn border border-sky-400/70 hover:bg-sky-900/40"
+                        onclick="document.getElementById('f').scrollIntoView({behavior:'smooth'})">
+                        Explore features
+                    </button>
+                </div>
+                <div class="sf-grid">
+                    <div class="sf-card">
+                        <p class="text-sm font-semibold mb-1">Multi portal</p>
+                        <p class="text-xs text-slate-300/80">
+                            Separate views for patients, doctors, researchers, and admins.
+                        </p>
+                    </div>
+                    <div class="sf-card">
+                        <p class="text-sm font-semibold mb-1">AI ready</p>
+                        <p class="text-xs text-slate-300/80">
+                            Plug into Google AI Studio for diagnosis support and trends.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="sf-card">
+                <p class="text-sm font-semibold text-sky-200 mb-2">
+                    Preview portals
+                </p>
+                <div class="grid grid-cols-2 gap-3 text-sm">
+                    <button class="rounded-xl border border-sky-500/60 px-2 py-3 hover:bg-sky-900/40 text-left"
+                        onclick="window.location.href='patient.html'">
+                        👤 Patient
+                        <span class="block text-[11px] text-slate-300/80 mt-1">
+                            QR profile, reminders, journey map.
+                        </span>
+                    </button>
+                    <button class="rounded-xl border border-sky-500/60 px-2 py-3 hover:bg-sky-900/40 text-left"
+                        onclick="window.location.href='doctor.html'">
+                        🩺 Doctor
+                        <span class="block text-[11px] text-slate-300/80 mt-1">
+                            unified cases, AI support, telemed.
+                        </span>
+                    </button>
+                    <button class="rounded-xl border border-sky-500/60 px-2 py-3 hover:bg-sky-900/40 text-left"
+                        onclick="window.location.href='researcher.html'">
+                        📊 Research
+                        <span class="block text-[11px] text-slate-300/80 mt-1">
+                            cohorts, blended outcome charts.
+                        </span>
+                    </button>
+                    <button class="rounded-xl border border-rose-500/80 px-2 py-3 hover:bg-rose-900/40 text-left"
+                        onclick="window.location.href='admin.html'">
+                        🏥 Admin
+                        <span class="block text-[11px] text-slate-300/80 mt-1">
+                            users, audit, bulk import/export.
+                        </span>
+                    </button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <div id="lg-m" class="fixed inset-0 bg-black/70 flex items-center justify-center hidden">
+        <div class="bg-slate-900 rounded-2xl p-6 w-full max-w-md">
+            <p class="text-lg font-semibold mb-4">Login</p>
+            <form id="lg-f" class="space-y-3 text-sm">
+                <input id="lg-e" type="email" placeholder="email" class="sf-in" required />
+                <input id="lg-p" type="password" placeholder="password" class="sf-in" required />
+                <button type="submit" class="w-full sf-btn bg-sky-600 hover:bg-sky-500 mt-1">
+                    Login
+                </button>
+            </form>
+            <button id="g-btn" class="w-full sf-btn mt-3 bg-white text-slate-900 text-sm">
+                Continue with Google
+            </button>
+            <button data-close="lg" class="mt-4 text-[11px] text-slate-400 hover:text-slate-200">
+                close
+            </button>
+        </div>
+    </div>
+
+    <div id="sg-m" class="fixed inset-0 bg-black/70 flex items-center justify-center hidden">
+        <div class="bg-slate-900 rounded-2xl p-6 w-full max-w-md">
+            <p class="text-lg font-semibold mb-4">Register</p>
+            <form id="sg-f" class="space-y-3 text-sm">
+                <input id="sg-n" type="text" placeholder="name" class="sf-in" required />
+                <input id="sg-e" type="email" placeholder="email" class="sf-in" required />
+                <input id="sg-p" type="password" placeholder="password" class="sf-in" required />
+                <select id="sg-r" class="sf-in" required>
+                    <option value="">role</option>
+                    <option value="patient">patient</option>
+                    <option value="doctor">doctor</option>
+                    <option value="researcher">researcher</option>
+                    <option value="admin">admin</option>
+                </select>
+                <button type="submit" class="w-full sf-btn bg-sky-600 hover:bg-sky-500 mt-1">
+                    Register
+                </button>
+            </form>
+            <button data-close="sg" class="mt-4 text-[11px] text-slate-400 hover:text-slate-200">
+                close
+            </button>
+        </div>
+    </div>
+
+    <script src="assets/js/firebase-config.js"></script>
+    <script src="assets/js/utils.js"></script>
+    <script src="assets/js/auth.js"></script>
+    <script src="assets/js/main.js"></script>
+</body>
+
+</html>
