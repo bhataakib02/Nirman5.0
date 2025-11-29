@@ -60,3 +60,21 @@ void setup() {
 
   digitalWrite(wifiLed, LOW);
   digitalWrite(RelayPin1, !cooler); //ACTIVE LOW
+
+  if (!display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS)) {
+    Serial.println(F("SSD1306 allocation failed"));
+    while (true);
+  }
+  display.clearDisplay();
+  display.setTextColor(SSD1306_WHITE);
+  display.display();
+
+  // Load preferences
+  set_temp = pref.getFloat("setTemp", 25);
+  auto_Mode = pref.getBool("Mode", true);
+  cooler = pref.getBool("Cooler", false);
+  digitalWrite(RelayPin1, !cooler);
+}
+
+void loop() {
+  ArduinoCloud.update();
