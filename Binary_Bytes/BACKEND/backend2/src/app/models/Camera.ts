@@ -49,7 +49,6 @@ const cameraSchema = new mongoose.Schema<ICamera>(
   }
 );
 
-// Compound index for userId and id
 cameraSchema.index({ userId: 1, id: 1 }, { unique: true });
 
 const Camera =

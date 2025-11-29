@@ -44,9 +44,7 @@ const threatSchema = new mongoose.Schema<IThreat>(
   }
 );
 
-// Compound index for userId and id
 threatSchema.index({ userId: 1, id: 1 }, { unique: true });
-// Index for filtering by status
 threatSchema.index({ userId: 1, status: 1 });
 
 const Threat =

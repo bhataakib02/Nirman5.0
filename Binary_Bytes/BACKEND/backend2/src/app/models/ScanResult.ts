@@ -3,7 +3,10 @@ import mongoose, { Document, Model } from "mongoose";
 export interface IScanResult extends Document {
   userId: string;
   id: string;
-  rtspUrl: string;
+  rtspUrl: string; // Encrypted RTSP URL
+  rtspUrlHash: string; // Hash for searching without decrypting
+  rtspUrlSignature?: string; // Digital signature
+  rtspUrlTimestamp?: number; // When URL was signed
   vulnerabilities: string[];
   riskScore: number;
   status: 'critical' | 'high' | 'medium' | 'low';
@@ -23,7 +26,10 @@ const scanResultSchema = new mongoose.Schema<IScanResult>(
   {
     userId: { type: String, required: true, index: true },
     id: { type: String, required: true },
-    rtspUrl: { type: String, required: true },
+    rtspUrl: { type: String, required: true }, // Encrypted
+    rtspUrlHash: { type: String, required: true, index: true }, // For searching
+    rtspUrlSignature: { type: String }, // Digital signature
+    rtspUrlTimestamp: { type: Number }, // Signature timestamp
     vulnerabilities: [{ type: String }],
     riskScore: { type: Number, required: true, min: 0, max: 100 },
     status: { 
@@ -45,9 +51,7 @@ const scanResultSchema = new mongoose.Schema<IScanResult>(
   }
 );
 
-// Compound index for userId and id
 scanResultSchema.index({ userId: 1, id: 1 }, { unique: true });
-// Index for filtering by status
 scanResultSchema.index({ userId: 1, status: 1 });
 
 const ScanResult =

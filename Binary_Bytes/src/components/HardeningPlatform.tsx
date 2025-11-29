@@ -3,7 +3,6 @@ import { Shield, Lock, Key, Wifi, Server, Check, AlertTriangle, Play, Download, 
 import { useAppContext } from '../context/AppContext';
 import { Camera } from '../context/AppContext';
 
-// Helper function to get recommendations based on camera status
 const getRecommendations = (camera: Camera) => {
   const recommendations = [];
   
@@ -49,22 +48,17 @@ export function HardeningPlatform() {
       setSelectedCamera(cameraId);
       setIsHardening(true);
 
-      // Get all security check keys
       const securityChecks = Object.keys(camera.securityChecks) as Array<keyof Camera['securityChecks']>;
       
-      // Process each security check with a delay
       for (const check of securityChecks) {
         if (!camera.securityChecks[check]) {
-          // Simulate API call or actual hardening process
           await new Promise(resolve => setTimeout(resolve, 1500));
           
-          // Update the specific check
           const updatedChecks = {
             ...camera.securityChecks,
             [check]: true
           };
           
-          // Calculate new status
           const completedChecks = Object.values(updatedChecks).filter(Boolean).length;
           const totalChecks = securityChecks.length;
           
@@ -76,7 +70,6 @@ export function HardeningPlatform() {
             completedChecks >= Math.ceil(totalChecks * 0.75) ? 'medium' :
             completedChecks >= Math.ceil(totalChecks * 0.5) ? 'high' : 'critical';
           
-          // Update the camera with the new check status
           updateCamera(cameraId, {
             securityChecks: updatedChecks,
             status: newStatus,
@@ -108,13 +101,11 @@ export function HardeningPlatform() {
     setIsHardening(true);
     
     try {
-      // Process cameras sequentially with a delay between each
       for (let i = 0; i < camerasToHarden.length; i++) {
         const camera = camerasToHarden[i];
         setSelectedCamera(camera.id);
         await handleAutoHarden(camera.id);
         
-        // Add a small delay between cameras (except after the last one)
         if (i < camerasToHarden.length - 1) {
           await new Promise(resolve => setTimeout(resolve, 1000));
         }
@@ -166,7 +157,6 @@ export function HardeningPlatform() {
           lastHardened: new Date().toISOString(),
           securityChecks: {
             ...cam.securityChecks,
-            // Add additional metadata
             _metadata: {
               lastUpdated: new Date().toISOString(),
               updatedBy: 'auto-hardening-tool'
@@ -186,7 +176,6 @@ export function HardeningPlatform() {
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
       
-      // Show success notification
       showNotification('Configuration exported successfully!', 'success');
     } catch (error) {
       console.error('Error exporting configuration:', error);
@@ -246,7 +235,6 @@ export function HardeningPlatform() {
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
       
-      // Show success notification
       showNotification('Report generated successfully!', 'success');
     } catch (error) {
       console.error('Error generating report:', error);

@@ -8,13 +8,11 @@ interface NavigationProps {
 export function Navigation({ onLogout }: NavigationProps) {
   const { pathname } = useLocation();
   
-  // Helper function to check if a path is active
   const isActive = (path: string) => {
     if (path === '/home') return pathname === '/' || pathname === '/home';
     return pathname.startsWith(path);
   };
   
-  // Navigation items with their respective icons and paths
   const navItems = [
     { path: '/dashboard', icon: <LayoutDashboard className="w-5 h-5" />, label: 'Dashboard' },
     { path: '/lab', icon: <Video className="w-5 h-5" />, label: 'Virtual Lab' },

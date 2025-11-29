@@ -28,7 +28,6 @@ export function ThreatDetection() {
     { time: '23:59', threats: 3 },
   ];
 
-  // Generate live threats
   useEffect(() => {
     const interval = setInterval(() => {
       const threatTypes = [
@@ -46,7 +45,6 @@ export function ThreatDetection() {
     return () => clearInterval(interval);
   }, []);
 
-  // Auto-generate new threats occasionally
   useEffect(() => {
     const interval = setInterval(() => {
       if (Math.random() > 0.7) {

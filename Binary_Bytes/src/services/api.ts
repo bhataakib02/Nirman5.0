@@ -40,7 +40,7 @@ class ApiService {
         'Content-Type': 'application/json',
         ...options.headers,
       },
-      credentials: 'include', // Important for cookies
+      credentials: 'include',
     };
 
     try {
@@ -75,9 +75,135 @@ class ApiService {
   }
 
   async logout(): Promise<void> {
-    // Since backend uses httpOnly cookies, logout is handled by clearing client-side state
-    // If you add a logout endpoint, call it here
     return Promise.resolve();
+  }
+
+  async createScan(scanData: {
+    id: string;
+    rtspUrl: string;
+    vulnerabilities: string[];
+    riskScore: number;
+    status: 'critical' | 'high' | 'medium' | 'low';
+    timestamp: string;
+    findings: {
+      weakPassword: boolean;
+      openPorts: string[];
+      outdatedFirmware: boolean;
+      unencryptedStream: boolean;
+      defaultCredentials: boolean;
+    };
+  }): Promise<{ scanResult: any }> {
+    return this.request<{ scanResult: any }>('/api/scans', {
+      method: 'POST',
+      body: JSON.stringify(scanData),
+    });
+  }
+
+  async getScans(status?: string): Promise<{ scanResults: any[] }> {
+    const endpoint = status && status !== 'all' 
+      ? `/api/scans?status=${status}` 
+      : '/api/scans';
+    return this.request<{ scanResults: any[] }>(endpoint, {
+      method: 'GET',
+    });
+  }
+
+  async getCameras(): Promise<{ cameras: any[] }> {
+    return this.request<{ cameras: any[] }>('/api/cameras', {
+      method: 'GET',
+    });
+  }
+
+  async createCamera(cameraData: {
+    id: string;
+    name: string;
+    ip: string;
+    status?: 'secure' | 'vulnerable';
+    risk?: 'critical' | 'high' | 'medium' | 'low';
+    securityChecks?: {
+      strongPassword: boolean;
+      encryption: boolean;
+      authentication: boolean;
+      firewall: boolean;
+      firmware: boolean;
+    };
+  }): Promise<{ camera: any }> {
+    return this.request<{ camera: any }>('/api/cameras', {
+      method: 'POST',
+      body: JSON.stringify(cameraData),
+    });
+  }
+
+  async updateCamera(id: string, updates: Partial<{
+    name: string;
+    ip: string;
+    status: 'secure' | 'vulnerable';
+    risk: 'critical' | 'high' | 'medium' | 'low';
+    securityChecks: {
+      strongPassword: boolean;
+      encryption: boolean;
+      authentication: boolean;
+      firewall: boolean;
+      firmware: boolean;
+    };
+  }>): Promise<{ camera: any }> {
+    return this.request<{ camera: any }>(`/api/cameras/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(updates),
+    });
+  }
+
+  async deleteCamera(id: string): Promise<{ message: string }> {
+    return this.request<{ message: string }>(`/api/cameras/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async getThreats(status?: string, severity?: string): Promise<{ threats: any[] }> {
+    const params = new URLSearchParams();
+    if (status && status !== 'all') params.append('status', status);
+    if (severity && severity !== 'all') params.append('severity', severity);
+    const query = params.toString();
+    const endpoint = query ? `/api/threats?${query}` : '/api/threats';
+    return this.request<{ threats: any[] }>(endpoint, {
+      method: 'GET',
+    });
+  }
+
+  async createThreat(threatData: {
+    id: string;
+    timestamp?: string;
+    type: 'unauthorized_access' | 'brute_force' | 'anomaly' | 'intrusion';
+    severity: 'critical' | 'high' | 'medium' | 'low';
+    source: string;
+    camera: string;
+    description: string;
+    status?: 'active' | 'investigating' | 'resolved';
+  }): Promise<{ threat: any }> {
+    return this.request<{ threat: any }>('/api/threats', {
+      method: 'POST',
+      body: JSON.stringify(threatData),
+    });
+  }
+
+  async updateThreat(id: string, updates: Partial<{
+    type: 'unauthorized_access' | 'brute_force' | 'anomaly' | 'intrusion';
+    severity: 'critical' | 'high' | 'medium' | 'low';
+    source: string;
+    camera: string;
+    description: string;
+    status: 'active' | 'investigating' | 'resolved';
+  }>): Promise<{ threat: any }> {
+    return this.request<{ threat: any }>(`/api/threats/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(updates),
+    });
+  }
+
+  async deleteThreat(id: string): Promise<{ message: string }> {
+    return this.request<{ message: string }>(`/api/threats/${id}`, {
+      method: 'DELETE',
+    });
   }
 }
 

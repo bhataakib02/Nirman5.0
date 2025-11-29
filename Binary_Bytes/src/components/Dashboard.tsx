@@ -20,7 +20,6 @@ export function Dashboard() {
     { time: '20:00', threats: 3, scans: 31 },
   ]);
 
-  // Update real-time data dynamically
   useEffect(() => {
     const interval = setInterval(() => {
       setRealtimeData(prev => {

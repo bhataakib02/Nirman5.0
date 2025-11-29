@@ -1,35 +1,43 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import { dbConnect } from '@/app/lib/db';
 import User from '@/app/models/User';
 import { generateToken, setAuthToken } from '@/app/lib/auth';
+import { corsHeaders, handleCORS, addCorsHeaders } from '@/app/lib/cors';
 
-export async function POST(req: Request) {
+export async function OPTIONS(req: NextRequest) {
+  return handleCORS(req);
+}
+
+export async function POST(req: NextRequest) {
   try {
     const { email, password } = await req.json();
 
     if (!email || !password) {
-      return NextResponse.json(
+      const errorResponse = NextResponse.json(
         { error: 'Email and password are required' },
         { status: 400 }
       );
+      return addCorsHeaders(errorResponse, req);
     }
 
     await dbConnect();
 
     const user = await User.findOne({ email });
     if (!user) {
-      return NextResponse.json(
+      const errorResponse = NextResponse.json(
         { error: 'Invalid email or password' },
         { status: 401 }
       );
+      return addCorsHeaders(errorResponse, req);
     }
 
     const isPasswordValid = await user.comparePassword(password);
     if (!isPasswordValid) {
-      return NextResponse.json(
+      const errorResponse = NextResponse.json(
         { error: 'Invalid email or password' },
         { status: 401 }
       );
+      return addCorsHeaders(errorResponse, req);
     }
 
     const token = generateToken(user._id.toString());
@@ -46,13 +54,13 @@ export async function POST(req: Request) {
     );
 
     setAuthToken(response, token);
-
-    return response;
+    return addCorsHeaders(response, req);
   } catch (error) {
     console.error('Login error:', error);
-    return NextResponse.json(
+    const errorResponse = NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
     );
+    return addCorsHeaders(errorResponse, req);
   }
 }

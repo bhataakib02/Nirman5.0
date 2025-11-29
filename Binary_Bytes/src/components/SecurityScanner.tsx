@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Search, Play, AlertTriangle, CheckCircle, XCircle, Wifi, Lock, Shield, Server, Download, RefreshCw, Filter, X } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
+import { apiService } from '../services/api';
 
 interface ScanResult {
   id: string;
@@ -28,9 +29,45 @@ export function SecurityScanner() {
   const [filterStatus, setFilterStatus] = useState<'all' | 'critical' | 'high' | 'medium' | 'low'>('all');
   const [showFilters, setShowFilters] = useState(false);
 
+  const validateRTSPUrl = (url: string): { valid: boolean; error?: string } => {
+    if (!url.trim()) {
+      return { valid: false, error: 'RTSP URL is required' };
+    }
+
+    const rtspRegex = /^rtsp[s]?:\/\/([^\/:]+)(?::(\d+))?(\/.*)?$/i;
+    
+    if (!rtspRegex.test(url)) {
+      return { valid: false, error: 'Invalid RTSP URL format. Use rtsp:// or rtsps://' };
+    }
+    
+    try {
+      const urlObj = new URL(url);
+      if (!['rtsp:', 'rtsps:'].includes(urlObj.protocol)) {
+        return { valid: false, error: 'Protocol must be rtsp:// or rtsps://' };
+      }
+      
+      if (!urlObj.hostname || urlObj.hostname.length === 0) {
+        return { valid: false, error: 'Hostname is required' };
+      }
+      
+      if (urlObj.hostname === 'localhost' || urlObj.hostname === '127.0.0.1' || urlObj.hostname === '0.0.0.0') {
+        return { valid: false, error: 'Localhost URLs are not allowed for security scanning' };
+      }
+      
+      if (url.includes('..')) {
+        return { valid: false, error: 'URL contains suspicious patterns' };
+      }
+      
+      return { valid: true };
+    } catch {
+      return { valid: false, error: 'Invalid URL format' };
+    }
+  };
+
   const handleScan = () => {
-    if (!rtspUrl.trim()) {
-      alert('Please enter an RTSP URL');
+    const validation = validateRTSPUrl(rtspUrl);
+    if (!validation.valid) {
+      alert(validation.error || 'Invalid RTSP URL');
       return;
     }
 
@@ -38,7 +75,6 @@ export function SecurityScanner() {
     setScanningStep(0);
     setScanProgress(0);
     
-    // Simulate scanning process with steps and progress
     const steps = [0, 1, 2, 3, 4];
     let currentStep = 0;
 
@@ -52,69 +88,97 @@ export function SecurityScanner() {
       }
     }, 600);
     
-    // Complete scan after all steps
-    setTimeout(() => {
-      const vulnerabilities = [];
-      const weakPassword = Math.random() > 0.4;
-      const defaultCreds = Math.random() > 0.6;
-      const unencrypted = Math.random() > 0.3;
-      const outdated = Math.random() > 0.5;
-      
-      if (weakPassword) vulnerabilities.push('Weak Password');
-      if (defaultCreds) vulnerabilities.push('Default Credentials');
-      if (unencrypted) vulnerabilities.push('Unencrypted Stream');
-      if (outdated) vulnerabilities.push('Outdated Firmware');
-      
-      const openPortsCount = Math.floor(Math.random() * 3) + 1;
-      const allPorts = ['554', '8000', '8080', '80', '443'];
-      const openPorts = allPorts.slice(0, openPortsCount);
-      
-      if (openPorts.length > 0) {
-        vulnerabilities.push(`${openPorts.length} Open Ports`);
-      }
-      
-      const criticalCount = [weakPassword, defaultCreds].filter(Boolean).length;
-      const highCount = [unencrypted, outdated].filter(Boolean).length + (openPorts.length > 2 ? 1 : 0);
-      
-      let status: 'critical' | 'high' | 'medium' | 'low';
-      let riskScore;
-      
-      if (criticalCount >= 2) {
-        status = 'critical';
-        riskScore = Math.floor(Math.random() * 15) + 85;
-      } else if (criticalCount >= 1 || highCount >= 2) {
-        status = 'high';
-        riskScore = Math.floor(Math.random() * 20) + 65;
-      } else if (highCount >= 1) {
-        status = 'medium';
-        riskScore = Math.floor(Math.random() * 20) + 40;
-      } else {
-        status = 'low';
-        riskScore = Math.floor(Math.random() * 20) + 10;
-      }
-      
-      const result: ScanResult = {
-        id: `SCAN-${String(scanResults.length + 1).padStart(3, '0')}`,
-        rtspUrl: rtspUrl,
-        vulnerabilities,
-        riskScore,
-        status,
-        timestamp: new Date().toISOString(),
-        findings: {
-          weakPassword,
-          openPorts,
-          outdatedFirmware: outdated,
-          unencryptedStream: unencrypted,
-          defaultCredentials: defaultCreds,
+    setTimeout(async () => {
+      try {
+        const urlObj = new URL(rtspUrl);
+        const vulnerabilities: string[] = [];
+        const findings = {
+          weakPassword: false,
+          openPorts: [] as string[],
+          outdatedFirmware: false,
+          unencryptedStream: urlObj.protocol === 'rtsp:', // Not rtsps
+          defaultCredentials: false,
+        };
+
+        if (urlObj.protocol === 'rtsp:') {
+          vulnerabilities.push('Unencrypted Stream');
         }
-      };
-      
-      addScanResult(result);
-      setCurrentScan(result);
-      setIsScanning(false);
-      setScanningStep(0);
-      setScanProgress(100);
-      setRtspUrl('');
+
+        const port = urlObj.port || '554';
+        if (['554', '8554'].includes(port)) {
+          findings.openPorts.push(port);
+          if (findings.openPorts.length > 0) {
+            vulnerabilities.push(`${findings.openPorts.length} Open Ports`);
+          }
+        }
+
+        let status: 'critical' | 'high' | 'medium' | 'low';
+        let riskScore: number;
+
+        if (findings.unencryptedStream && findings.openPorts.length > 0) {
+          status = 'critical';
+          riskScore = 90;
+        } else if (findings.unencryptedStream || findings.openPorts.length > 0) {
+          status = 'high';
+          riskScore = 70;
+        } else if (urlObj.protocol === 'rtsps:') {
+          status = 'low';
+          riskScore = 20;
+        } else {
+          status = 'medium';
+          riskScore = 50;
+        }
+
+        const scanId = `SCAN-${String(scanResults.length + 1).padStart(3, '0')}`;
+        
+        const scanData = {
+          id: scanId,
+          rtspUrl: rtspUrl,
+          vulnerabilities,
+          riskScore,
+          status,
+          timestamp: new Date().toISOString(),
+          findings,
+        };
+
+        try {
+          await apiService.createScan(scanData);
+          
+          const result: ScanResult = {
+            id: scanId,
+            rtspUrl: rtspUrl,
+            vulnerabilities,
+            riskScore,
+            status,
+            timestamp: new Date().toISOString(),
+            findings,
+          };
+          
+          addScanResult(result);
+          setCurrentScan(result);
+        } catch (apiError) {
+          console.error('Error saving scan to backend:', apiError);
+          const result: ScanResult = {
+            id: scanId,
+            rtspUrl: rtspUrl,
+            vulnerabilities,
+            riskScore,
+            status,
+            timestamp: new Date().toISOString(),
+            findings,
+          };
+          addScanResult(result);
+          setCurrentScan(result);
+        }
+      } catch (error) {
+        console.error('Scan error:', error);
+        alert('An error occurred during scanning. Please try again.');
+      } finally {
+        setIsScanning(false);
+        setScanningStep(0);
+        setScanProgress(100);
+        setRtspUrl('');
+      }
     }, 3500);
   };
 
@@ -152,7 +216,6 @@ export function SecurityScanner() {
   const handleRescan = (url: string) => {
     setRtspUrl(url);
     setCurrentScan(null);
-    // Auto-start scan after a brief delay
     setTimeout(() => {
       handleScan();
     }, 100);

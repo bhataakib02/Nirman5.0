@@ -13,7 +13,6 @@ export function AnimatedBackground() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 
-    // Particles representing security nodes
     const particles: Array<{
       x: number;
       y: number;
@@ -22,7 +21,6 @@ export function AnimatedBackground() {
       radius: number;
     }> = [];
 
-    // Create particles
     for (let i = 0; i < 80; i++) {
       particles.push({
         x: Math.random() * canvas.width,
@@ -39,7 +37,6 @@ export function AnimatedBackground() {
       ctx.fillStyle = 'rgba(26, 18, 11, 0.05)';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // Draw connections between nearby particles
       particles.forEach((particle, i) => {
         particles.slice(i + 1).forEach(otherParticle => {
           const dx = particle.x - otherParticle.x;
@@ -57,16 +54,13 @@ export function AnimatedBackground() {
         });
       });
 
-      // Update and draw particles
       particles.forEach(particle => {
         particle.x += particle.vx;
         particle.y += particle.vy;
 
-        // Bounce off edges
         if (particle.x < 0 || particle.x > canvas.width) particle.vx *= -1;
         if (particle.y < 0 || particle.y > canvas.height) particle.vy *= -1;
 
-        // Draw particle
         ctx.beginPath();
         ctx.arc(particle.x, particle.y, particle.radius, 0, Math.PI * 2);
         ctx.fillStyle = '#D5CEA3';

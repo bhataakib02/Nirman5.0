@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { apiService } from '../services/api';
 
 export interface Camera {
   id: string;
@@ -47,10 +48,12 @@ interface AppContextType {
   setCameras: React.Dispatch<React.SetStateAction<Camera[]>>;
   threats: Threat[];
   scanResults: ScanResult[];
-  addCamera: (camera: Camera) => void;
-  updateCamera: (id: string, updates: Partial<Camera>) => void;
-  addThreat: (threat: Threat) => void;
-  updateThreat: (id: string, updates: Partial<Threat>) => void;
+  addCamera: (camera: Camera) => Promise<void>;
+  updateCamera: (id: string, updates: Partial<Camera>) => Promise<void>;
+  deleteCamera: (id: string) => Promise<void>;
+  addThreat: (threat: Threat) => Promise<void>;
+  updateThreat: (id: string, updates: Partial<Threat>) => Promise<void>;
+  deleteThreat: (id: string) => Promise<void>;
   addScanResult: (result: ScanResult) => void;
   stats: {
     totalCameras: number;
@@ -72,159 +75,194 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [threats, setThreats] = useState<Threat[]>([]);
   const [scanResults, setScanResults] = useState<ScanResult[]>([]);
   const [notification, setNotification] = useState<{message: string, type: 'success' | 'error' | 'warning'} | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  // Initialize with default data
   useEffect(() => {
-    const storedCameras = localStorage.getItem('cameras');
-    const storedThreats = localStorage.getItem('threats');
-    const storedScans = localStorage.getItem('scanResults');
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        
+        try {
+          const camerasResponse = await apiService.getCameras();
+          setCameras(camerasResponse.cameras.map((cam: any) => ({
+            id: cam.id,
+            name: cam.name,
+            ip: cam.ip,
+            status: cam.status,
+            risk: cam.risk,
+            securityChecks: cam.securityChecks,
+          })));
+        } catch (error) {
+          console.error('Error fetching cameras:', error);
+          showNotification('Failed to load cameras from backend', 'error');
+        }
 
-    if (storedCameras) {
-      setCameras(JSON.parse(storedCameras));
+        try {
+          const threatsResponse = await apiService.getThreats();
+          setThreats(threatsResponse.threats.map((threat: any) => ({
+            id: threat.id,
+            timestamp: new Date(threat.timestamp).toISOString(),
+            type: threat.type,
+            severity: threat.severity,
+            source: threat.source,
+            camera: threat.camera,
+            description: threat.description,
+            status: threat.status,
+          })));
+        } catch (error) {
+          console.error('Error fetching threats:', error);
+          showNotification('Failed to load threats from backend', 'error');
+        }
+
+        try {
+          const scansResponse = await apiService.getScans();
+          setScanResults(scansResponse.scanResults.map((scan: any) => ({
+            id: scan.id,
+            rtspUrl: scan.rtspUrl,
+            vulnerabilities: scan.vulnerabilities,
+            riskScore: scan.riskScore,
+            status: scan.status,
+            timestamp: new Date(scan.timestamp).toISOString(),
+            findings: scan.findings,
+          })));
+        } catch (error) {
+          console.error('Error fetching scans:', error);
+        }
+      } catch (error) {
+        console.error('Error initializing data:', error);
+        showNotification('Failed to initialize data from backend', 'error');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    const currentUser = localStorage.getItem('currentUser');
+    if (currentUser) {
+      fetchData();
     } else {
-      const defaultCameras: Camera[] = [
-        {
-          id: 'CAM-001',
-          name: 'Entrance Camera',
-          ip: '192.168.1.10',
-          status: 'vulnerable',
-          risk: 'critical',
-          securityChecks: {
-            strongPassword: false,
-            encryption: false,
-            authentication: false,
-            firewall: false,
-            firmware: false,
-          }
-        },
-        {
-          id: 'CAM-002',
-          name: 'Lobby Camera',
-          ip: '192.168.1.15',
-          status: 'vulnerable',
-          risk: 'high',
-          securityChecks: {
-            strongPassword: true,
-            encryption: false,
-            authentication: true,
-            firewall: false,
-            firmware: true,
-          }
-        },
-        {
-          id: 'CAM-003',
-          name: 'Parking Camera',
-          ip: '192.168.1.20',
-          status: 'secure',
-          risk: 'low',
-          securityChecks: {
-            strongPassword: true,
-            encryption: true,
-            authentication: true,
-            firewall: true,
-            firmware: true,
-          }
-        },
-        {
-          id: 'CAM-004',
-          name: 'Warehouse Camera',
-          ip: '192.168.1.25',
-          status: 'secure',
-          risk: 'low',
-          securityChecks: {
-            strongPassword: true,
-            encryption: true,
-            authentication: true,
-            firewall: true,
-            firmware: true,
-          }
-        },
-      ];
-      setCameras(defaultCameras);
-      localStorage.setItem('cameras', JSON.stringify(defaultCameras));
-    }
-
-    if (storedThreats) {
-      setThreats(JSON.parse(storedThreats));
-    } else {
-      const defaultThreats: Threat[] = [
-        {
-          id: 'THR-001',
-          timestamp: new Date().toISOString(),
-          type: 'unauthorized_access',
-          severity: 'critical',
-          source: '192.168.1.45',
-          camera: 'CAM-001',
-          description: 'Unauthorized login attempt detected from unknown IP',
-          status: 'active'
-        },
-        {
-          id: 'THR-002',
-          timestamp: new Date(Date.now() - 300000).toISOString(),
-          type: 'brute_force',
-          severity: 'high',
-          source: '10.0.0.88',
-          camera: 'CAM-002',
-          description: 'Multiple failed authentication attempts (12 attempts in 2 minutes)',
-          status: 'investigating'
-        },
-        {
-          id: 'THR-003',
-          timestamp: new Date(Date.now() - 900000).toISOString(),
-          type: 'anomaly',
-          severity: 'medium',
-          source: '192.168.1.102',
-          camera: 'CAM-003',
-          description: 'Unusual stream access pattern detected outside normal hours',
-          status: 'investigating'
-        },
-      ];
-      setThreats(defaultThreats);
-      localStorage.setItem('threats', JSON.stringify(defaultThreats));
-    }
-
-    if (storedScans) {
-      setScanResults(JSON.parse(storedScans));
+      setLoading(false);
     }
   }, []);
 
-  // Save to localStorage whenever data changes
-  useEffect(() => {
-    if (cameras.length > 0) {
-      localStorage.setItem('cameras', JSON.stringify(cameras));
+  const addCamera = async (camera: Camera) => {
+    try {
+      const response = await apiService.createCamera(camera);
+      const newCamera = {
+        id: response.camera.id,
+        name: response.camera.name,
+        ip: response.camera.ip,
+        status: response.camera.status,
+        risk: response.camera.risk,
+        securityChecks: response.camera.securityChecks,
+      };
+      setCameras(prev => [...prev, newCamera]);
+      showNotification('Camera added successfully', 'success');
+    } catch (error) {
+      console.error('Error adding camera:', error);
+      showNotification('Failed to add camera', 'error');
+      throw error;
     }
-  }, [cameras]);
-
-  useEffect(() => {
-    if (threats.length > 0) {
-      localStorage.setItem('threats', JSON.stringify(threats));
-    }
-  }, [threats]);
-
-  useEffect(() => {
-    if (scanResults.length > 0) {
-      localStorage.setItem('scanResults', JSON.stringify(scanResults));
-    }
-  }, [scanResults]);
-
-  const addCamera = (camera: Camera) => {
-    setCameras(prev => [...prev, camera]);
   };
 
-  const updateCamera = (id: string, updates: Partial<Camera>) => {
-    setCameras(prev => prev.map(cam => 
-      cam.id === id ? { ...cam, ...updates } : cam
-    ));
+  const updateCamera = async (id: string, updates: Partial<Camera>) => {
+    try {
+      const response = await apiService.updateCamera(id, updates);
+      const updatedCamera = {
+        id: response.camera.id,
+        name: response.camera.name,
+        ip: response.camera.ip,
+        status: response.camera.status,
+        risk: response.camera.risk,
+        securityChecks: response.camera.securityChecks,
+      };
+      setCameras(prev => prev.map(cam => 
+        cam.id === id ? updatedCamera : cam
+      ));
+      showNotification('Camera updated successfully', 'success');
+    } catch (error) {
+      console.error('Error updating camera:', error);
+      showNotification('Failed to update camera', 'error');
+      throw error;
+    }
   };
 
-  const addThreat = (threat: Threat) => {
-    setThreats(prev => [threat, ...prev]);
+  const addThreat = async (threat: Threat) => {
+    try {
+      const response = await apiService.createThreat({
+        id: threat.id,
+        timestamp: threat.timestamp,
+        type: threat.type,
+        severity: threat.severity,
+        source: threat.source,
+        camera: threat.camera,
+        description: threat.description,
+        status: threat.status,
+      });
+      const newThreat = {
+        id: response.threat.id,
+        timestamp: new Date(response.threat.timestamp).toISOString(),
+        type: response.threat.type,
+        severity: response.threat.severity,
+        source: response.threat.source,
+        camera: response.threat.camera,
+        description: response.threat.description,
+        status: response.threat.status,
+      };
+      setThreats(prev => [newThreat, ...prev]);
+      showNotification('Threat added successfully', 'success');
+    } catch (error) {
+      console.error('Error adding threat:', error);
+      showNotification('Failed to add threat', 'error');
+      throw error;
+    }
   };
 
-  const updateThreat = (id: string, updates: Partial<Threat>) => {
-    setThreats(prev => prev.map(threat => 
-      threat.id === id ? { ...threat, ...updates } : threat
-    ));
+  const updateThreat = async (id: string, updates: Partial<Threat>) => {
+    try {
+      const response = await apiService.updateThreat(id, updates);
+      const updatedThreat = {
+        id: response.threat.id,
+        timestamp: new Date(response.threat.timestamp).toISOString(),
+        type: response.threat.type,
+        severity: response.threat.severity,
+        source: response.threat.source,
+        camera: response.threat.camera,
+        description: response.threat.description,
+        status: response.threat.status,
+      };
+      setThreats(prev => prev.map(threat => 
+        threat.id === id ? updatedThreat : threat
+      ));
+      showNotification('Threat updated successfully', 'success');
+    } catch (error) {
+      console.error('Error updating threat:', error);
+      showNotification('Failed to update threat', 'error');
+      throw error;
+    }
+  };
+
+  const deleteCamera = async (id: string) => {
+    try {
+      await apiService.deleteCamera(id);
+      setCameras(prev => prev.filter(cam => cam.id !== id));
+      showNotification('Camera deleted successfully', 'success');
+    } catch (error) {
+      console.error('Error deleting camera:', error);
+      showNotification('Failed to delete camera', 'error');
+      throw error;
+    }
+  };
+
+  const deleteThreat = async (id: string) => {
+    try {
+      await apiService.deleteThreat(id);
+      setThreats(prev => prev.filter(threat => threat.id !== id));
+      showNotification('Threat deleted successfully', 'success');
+    } catch (error) {
+      console.error('Error deleting threat:', error);
+      showNotification('Failed to delete threat', 'error');
+      throw error;
+    }
   };
 
   const addScanResult = (result: ScanResult) => {
@@ -237,7 +275,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    // Listen for login attempts
     const handleLoginAttempt = (e: StorageEvent) => {
       if (e.key === 'login_attempt' && e.newValue) {
         const attempt = JSON.parse(e.newValue);
@@ -246,7 +283,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
     };
 
-    // Listen for RTSP access attempts
     const handleRTSPAttempt = (e: StorageEvent) => {
       if (e.key === 'rtsp_access_attempt' && e.newValue) {
         const attempt = JSON.parse(e.newValue);
@@ -271,6 +307,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
     securedCameras: cameras.filter(c => c.status === 'secure').length,
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#1A120B] flex items-center justify-center">
+        <div className="text-[#E5E5CB]">Loading...</div>
+      </div>
+    );
+  }
+
   return (
     <AppContext.Provider
       value={{
@@ -280,8 +324,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
         scanResults,
         addCamera,
         updateCamera,
+        deleteCamera,
         addThreat,
         updateThreat,
+        deleteThreat,
         addScanResult,
         stats,
         totalCameras: cameras.length,

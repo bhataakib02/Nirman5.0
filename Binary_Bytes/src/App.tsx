@@ -14,11 +14,9 @@ const AppContent = ({ onLogout }: { onLogout: () => void }) => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Removed localStorage initialization - now using backend API
-
   const handleLogout = () => {
     localStorage.removeItem('currentUser');
-    onLogout(); // Update parent authentication state
+    onLogout();
     navigate('/auth', { replace: true });
   };
 
@@ -50,7 +48,6 @@ const AppContent = ({ onLogout }: { onLogout: () => void }) => {
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   
-  // Check authentication status on initial load
   useEffect(() => {
     const user = localStorage.getItem('currentUser');
     setIsAuthenticated(!!user);

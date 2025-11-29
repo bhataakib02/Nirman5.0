@@ -2,9 +2,10 @@ import { useState, useEffect, useRef } from 'react';
 import { Camera as CameraIcon, Play, Square, Eye, Settings, Wifi, AlertTriangle, Lock, Video, Plus, Save, Trash2 } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
 import { Camera } from '../context/AppContext';
+import { apiService } from '../services/api';
 
 export function VirtualCCTVLab() {
-  const { cameras, setCameras } = useAppContext();
+  const { cameras, addCamera, deleteCamera, showNotification } = useAppContext();
   const [selectedCamera, setSelectedCamera] = useState<string | null>(null);
 
   const [showAddCamera, setShowAddCamera] = useState(false);
@@ -12,10 +13,8 @@ export function VirtualCCTVLab() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [cameraError, setCameraError] = useState<string | null>(null);
   
-  // Store live streams for each camera
   const [cameraStreams, setCameraStreams] = useState<Map<string, MediaStream>>(new Map());
 
-  // Sync video element with stream
   useEffect(() => {
     if (videoRef.current && cameraStream) {
       videoRef.current.srcObject = cameraStream;
@@ -35,7 +34,6 @@ export function VirtualCCTVLab() {
     try {
       setCameraError(null);
       
-      // Check if getUserMedia is available
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         setCameraError('Camera access is not supported in this browser. Please use HTTPS or localhost.');
         return;
@@ -45,9 +43,9 @@ export function VirtualCCTVLab() {
         video: { 
           width: { ideal: 1280 },
           height: { ideal: 720 },
-          facingMode: 'user' // Use front-facing camera
+          facingMode: 'user'
         },
-        audio: false // No audio needed for CCTV
+        audio: false
       });
       
       setCameraStream(stream);
@@ -81,15 +79,15 @@ export function VirtualCCTVLab() {
     }
   };
 
-  const addNewCamera = () => {
+  const addNewCamera = async () => {
     if (!cameraStream) return;
     
-    const newCamera = {
-      id: `cam-${Date.now()}`,
+    const newCamera: Camera = {
+      id: `CAM-${String(cameras.length + 1).padStart(3, '0')}`,
       name: `Camera ${cameras.length + 1}`,
       ip: `192.168.1.${100 + cameras.length}`,
-      status: 'secure' as const,
-      risk: 'low' as const,
+      status: 'secure',
+      risk: 'low',
       securityChecks: {
         strongPassword: true,
         encryption: true,
@@ -99,25 +97,30 @@ export function VirtualCCTVLab() {
       }
     };
     
-    // Clone the stream for this camera (so we can keep it running)
-    const videoTrack = cameraStream.getVideoTracks()[0];
-    if (videoTrack) {
-      const newStream = new MediaStream([videoTrack.clone()]);
-      setCameraStreams(prev => {
-        const newMap = new Map(prev);
-        newMap.set(newCamera.id, newStream);
-        return newMap;
-      });
+    try {
+      const videoTrack = cameraStream.getVideoTracks()[0];
+      if (videoTrack) {
+        const newStream = new MediaStream([videoTrack.clone()]);
+        setCameraStreams(prev => {
+          const newMap = new Map(prev);
+          newMap.set(newCamera.id, newStream);
+          return newMap;
+        });
+      }
+      
+      await addCamera(newCamera);
+      setShowAddCamera(false);
+    } catch (error) {
+      console.error('Error adding camera:', error);
     }
-    
-    setCameras([...cameras, newCamera]);
-    setShowAddCamera(false);
-    // Don't stop the original stream - keep it for adding more cameras
   };
 
-  const deleteCamera = (cameraId: string) => {
-    if (window.confirm('Are you sure you want to delete this camera?')) {
-      // Stop and remove the stream
+  const handleDeleteCamera = async (cameraId: string) => {
+    if (!window.confirm('Are you sure you want to delete this camera?')) {
+      return;
+    }
+
+    try {
       const stream = cameraStreams.get(cameraId);
       if (stream) {
         stream.getTracks().forEach(track => track.stop());
@@ -128,14 +131,16 @@ export function VirtualCCTVLab() {
         });
       }
       
-      setCameras(cameras.filter(cam => cam.id !== cameraId));
+      await deleteCamera(cameraId);
+      
       if (selectedCamera === cameraId) {
         setSelectedCamera(null);
       }
+    } catch (error) {
+      console.error('Error deleting camera:', error);
     }
   };
   
-  // Cleanup streams on unmount
   useEffect(() => {
     return () => {
       cameraStreams.forEach(stream => {
@@ -147,7 +152,6 @@ export function VirtualCCTVLab() {
     };
   }, []);
 
-  // Add 3D animation effect
   const [isHovered, setIsHovered] = useState(false);
 
   return (
@@ -259,7 +263,7 @@ export function VirtualCCTVLab() {
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  deleteCamera(camera.id);
+                  handleDeleteCamera(camera.id);
                 }}
                 className="absolute -top-2 -right-2 p-1.5 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 z-10"
                 title="Delete Camera"
@@ -304,7 +308,6 @@ interface VirtualCameraFeedProps {
 function VirtualCameraFeed({ camera, isSelected, onSelect, liveStream }: VirtualCameraFeedProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   
-  // Sync video element with live stream when selected
   useEffect(() => {
     if (videoRef.current && liveStream && isSelected) {
       videoRef.current.srcObject = liveStream;
@@ -312,12 +315,9 @@ function VirtualCameraFeed({ camera, isSelected, onSelect, liveStream }: Virtual
         console.error('Error playing live stream:', err);
       });
     } else if (videoRef.current && !isSelected) {
-      // Clear video when not selected
       videoRef.current.srcObject = null;
     }
   }, [liveStream, isSelected]);
-  // Ensure camera object has all required properties
-  // Create a safe camera object with default values
   const safeCamera: Camera = {
     id: camera.id || `cam-${Date.now()}`,
     name: camera.name || 'Unknown Camera',
@@ -336,7 +336,6 @@ function VirtualCameraFeed({ camera, isSelected, onSelect, liveStream }: Virtual
   const [scanLinePosition, setScanLinePosition] = useState(0);
   const [motionDetected, setMotionDetected] = useState(false);
 
-  // Animate scan line
   useEffect(() => {
     const interval = setInterval(() => {
       setScanLinePosition(prev => (prev + 1) % 100);
@@ -344,7 +343,6 @@ function VirtualCameraFeed({ camera, isSelected, onSelect, liveStream }: Virtual
     return () => clearInterval(interval);
   }, []);
 
-  // Random motion detection
   useEffect(() => {
     const interval = setInterval(() => {
       setMotionDetected(Math.random() > 0.7);

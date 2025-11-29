@@ -28,7 +28,6 @@ export function AuthPage({ onLogin }: AuthPageProps) {
 
     try {
       if (isLogin) {
-        // Login using backend API
         if (!formData.email || !formData.password) {
           setError('Email and password are required');
           setIsLoading(false);
@@ -40,12 +39,10 @@ export function AuthPage({ onLogin }: AuthPageProps) {
           password: formData.password,
         });
 
-        // Store user info in localStorage for frontend state management
         localStorage.setItem('currentUser', JSON.stringify(response.user));
         setSuccess('Login successful! Redirecting...');
         onLogin(true);
       } else {
-        // Signup using backend API
         if (!formData.name || !formData.email || !formData.password) {
           setError('Name, email, and password are required');
           setIsLoading(false);
@@ -58,7 +55,6 @@ export function AuthPage({ onLogin }: AuthPageProps) {
           return;
         }
 
-        // Check admin code (frontend validation only)
         if (formData.adminCode !== 'ADMIN2024') {
           setError('Invalid admin code. Only administrators can register.');
           setIsLoading(false);
@@ -71,7 +67,6 @@ export function AuthPage({ onLogin }: AuthPageProps) {
           password: formData.password,
         });
 
-        // Store user info in localStorage for frontend state management
         localStorage.setItem('currentUser', JSON.stringify(response.user));
         setSuccess('Account created successfully! Redirecting...');
         onLogin(true);

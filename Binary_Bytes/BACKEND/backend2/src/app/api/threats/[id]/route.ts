@@ -2,81 +2,96 @@ import { NextRequest, NextResponse } from "next/server";
 import { dbConnect } from "@/app/lib/db";
 import { getAuthToken, verifyToken } from "@/app/lib/auth";
 import Threat from "@/app/models/Threat";
+import { corsHeaders, handleCORS, addCorsHeaders } from "@/app/lib/cors";
 
-// PATCH /api/threats/[id] - Update a threat
+export async function OPTIONS(req: NextRequest) {
+  return handleCORS(req);
+}
+
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     await dbConnect();
     
     const token = getAuthToken(req);
     if (!token) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      const errorResponse = NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return addCorsHeaders(errorResponse, req);
     }
 
     const decoded = verifyToken(token);
     if (!decoded) {
-      return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+      const errorResponse = NextResponse.json({ error: "Invalid token" }, { status: 401 });
+      return addCorsHeaders(errorResponse, req);
     }
 
     const body = await req.json();
     
     const threat = await Threat.findOneAndUpdate(
-      { userId: decoded.userId, id: params.id },
+      { userId: decoded.userId, id: id },
       { $set: body },
       { new: true, runValidators: true }
     );
 
     if (!threat) {
-      return NextResponse.json({ error: "Threat not found" }, { status: 404 });
+      const errorResponse = NextResponse.json({ error: "Threat not found" }, { status: 404 });
+      return addCorsHeaders(errorResponse, req);
     }
 
-    return NextResponse.json({ threat }, { status: 200 });
+    const response = NextResponse.json({ threat }, { status: 200 });
+    return addCorsHeaders(response, req);
   } catch (error: any) {
     console.error("Error updating threat:", error);
-    return NextResponse.json(
+    const errorResponse = NextResponse.json(
       { error: "Failed to update threat", details: error.message },
       { status: 500 }
     );
+    return addCorsHeaders(errorResponse, req);
   }
 }
 
-// DELETE /api/threats/[id] - Delete a threat
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     await dbConnect();
     
     const token = getAuthToken(req);
     if (!token) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      const errorResponse = NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return addCorsHeaders(errorResponse, req);
     }
 
     const decoded = verifyToken(token);
     if (!decoded) {
-      return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+      const errorResponse = NextResponse.json({ error: "Invalid token" }, { status: 401 });
+      return addCorsHeaders(errorResponse, req);
     }
 
     const threat = await Threat.findOneAndDelete({ 
       userId: decoded.userId, 
-      id: params.id 
+      id: id 
     });
 
     if (!threat) {
-      return NextResponse.json({ error: "Threat not found" }, { status: 404 });
+      const errorResponse = NextResponse.json({ error: "Threat not found" }, { status: 404 });
+      return addCorsHeaders(errorResponse, req);
     }
 
-    return NextResponse.json({ message: "Threat deleted successfully" }, { status: 200 });
+    const response = NextResponse.json({ message: "Threat deleted successfully" }, { status: 200 });
+    return addCorsHeaders(response, req);
   } catch (error: any) {
     console.error("Error deleting threat:", error);
-    return NextResponse.json(
+    const errorResponse = NextResponse.json(
       { error: "Failed to delete threat", details: error.message },
       { status: 500 }
     );
+    return addCorsHeaders(errorResponse, req);
   }
 }
 
