@@ -1,6 +1,7 @@
 import { Shield, Eye, Lock, Activity, LogOut } from 'lucide-react';
 import { AnimatedBackground } from './AnimatedBackground';
 import { useNavigate } from 'react-router-dom';
+import logo from '../assets/logo.svg';
 
 interface HeroProps {
   onLogout: () => void;
@@ -41,7 +42,12 @@ export function Hero({ onLogout }: HeroProps) {
           <div className="flex items-center justify-center mb-6">
             <div className="relative">
               <div className="absolute inset-0 bg-[#D5CEA3] blur-3xl opacity-20 rounded-full"></div>
-              <Shield className="w-24 h-24 text-[#D5CEA3] relative animate-pulse" />
+              <img 
+                src={logo} 
+                alt="Cyber Sentinel Logo" 
+                className="w-24 h-24 relative animate-pulse"
+                style={{ filter: 'brightness(0) saturate(100%) invert(84%) sepia(9%) saturate(1034%) hue-rotate(16deg) brightness(95%) contrast(92%)' }}
+              />
             </div>
           </div>
           

@@ -1,5 +1,6 @@
 import { Shield, Search, AlertTriangle, Lock, LayoutDashboard, LogOut, Video } from 'lucide-react';
 import { NavLink, useLocation } from 'react-router-dom';
+import logo from '../assets/logo.svg';
 
 interface NavigationProps {
   onLogout: () => void;
@@ -28,7 +29,12 @@ export function Navigation({ onLogout }: NavigationProps) {
             to="/home"
             className="flex items-center gap-3 hover:opacity-80 transition-opacity"
           >
-            <Shield className="w-8 h-8 text-[#D5CEA3]" />
+            <img 
+              src={logo} 
+              alt="Cyber Sentinel Logo" 
+              className="w-8 h-8"
+              style={{ filter: 'brightness(0) saturate(100%) invert(84%) sepia(9%) saturate(1034%) hue-rotate(16deg) brightness(95%) contrast(92%)' }}
+            />
             <span className="text-xl">
               <span className="text-[#D5CEA3]">Cyber</span>{' '}
               <span className="text-[#E5E5CB]">Sentinel</span>
