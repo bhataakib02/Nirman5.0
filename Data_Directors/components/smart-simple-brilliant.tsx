@@ -11,11 +11,7 @@ interface SmartSimpleBrilliantProps {
   theme?: "light" | "dark"
 }
 
-/**
- * Smart · Simple · Brilliant – Calendar cards
- * Generated from Figma via MCP with exact measurements (482×300px)
- * Single-file component following the v0-ready pattern used in this repo.
- */
+
 const SmartSimpleBrilliant: React.FC<SmartSimpleBrilliantProps> = ({
   width = 482,
   height = 300,

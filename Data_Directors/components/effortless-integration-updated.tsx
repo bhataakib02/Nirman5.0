@@ -9,10 +9,7 @@ interface EffortlessIntegrationProps {
   className?: string
 }
 
-/**
- * Effortless Integration – Service integration constellation
- * Three concentric rings with logos positioned on ring axes
- */
+
 const EffortlessIntegration: React.FC<EffortlessIntegrationProps> = ({ width = 482, height = 300, className = "" }) => {
   const centerX = 250
   const centerY = 179

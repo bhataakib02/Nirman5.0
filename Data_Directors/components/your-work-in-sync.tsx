@@ -11,11 +11,7 @@ interface YourWorkInSyncProps {
   theme?: "light" | "dark"
 }
 
-/**
- * Your work, in sync – Chat conversation UI
- * Generated from Figma via MCP with exact measurements (482×300px)
- * Single-file component following the v0-ready pattern used in this repo.
- */
+
 const YourWorkInSync: React.FC<YourWorkInSyncProps> = ({
   width = 482,
   height = 300,
