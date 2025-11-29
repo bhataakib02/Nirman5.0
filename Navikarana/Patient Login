@@ -12,14 +12,14 @@ class PatientLogin(PatientLoginTemplate):
     self.Panel_SignIn.visible = True
 
 
-  # 🔹 CREATE ACCOUNT BUTTON CLICK  (New)
+  #  CREATE ACCOUNT BUTTON CLICK
   def btn_show_signup_click(self, **event_args):
     self.Panel_SignIn.visible = False
     self.Panel_SignUp.visible = True
   
 
 
-  # 🔹 SIGN UP BUTTON
+  # SIGN UP BUTTON
   def btn_signup_click(self, **event_args):
     name = self.txt_name.text
     email = self.txt_email_signup.text
@@ -42,7 +42,7 @@ class PatientLogin(PatientLoginTemplate):
       self.Panel_SignIn.visible = True
 
 
-  # 🔹 SIGN IN BUTTON
+  # SIGN IN BUTTON
   def btn_signin_click(self, **event_args):
     email = self.txt_email.text
     password = self.txt_password.text
