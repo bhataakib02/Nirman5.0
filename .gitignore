@@ -70,4 +70,6 @@ npm-debug.log
 Hackverse/AYUR-PROJECT/data/tongue_dataset/
 Hackverse/AYUR-PROJECT/models/
 Hackverse/AYUR-PROJECT/rag_index/embeddings.bin
+# Tongue dataset (Kaggle etc) – don't track in git
+Hackverse/UPYOGI/UpyogiWeb/Tongue_model/data/
 
